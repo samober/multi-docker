@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t samober/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run samober/react-test npm run test -- --coverage
+
+after_success:
+  # Build production containers
+  - docker build -t samober/multi-docker-client ./client
+  - docker build -t samober/multi-docker-nginx ./nginx
+  - docker build -t samober/multi-docker-server ./server
+  - docker build -t samober/multi-docker-worker ./worker
+  # Login to docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push all images to docker hub
+  - docker push samober/multi-docker-client
+  - docker push samober/multi-docker-nginx
+  - docker push samober/multi-docker-server
+  - docker push samober/multi-docker-worker
